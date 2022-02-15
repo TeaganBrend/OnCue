@@ -37,6 +37,7 @@ class FancyBorder(GridLayout):
 class OnCue(App):
     def build(self):
         # Okay lets get screensize and this is hacky I know
+        self.icon = 'OnCueIcon.png'
         screensize = self._getScreenSize()
         Window.size = (int(screensize[0]*0.15), int(screensize[0]*0.2))
         self.window = GridLayout(cols=1)
@@ -109,7 +110,6 @@ class OnCue(App):
             self.running = True
             self.button.text = 'STOP'
             self.interval = float(self.interval_control.text)*60 #convert to seconds
-            self.playTone()
             self.clock_int = Clock.schedule_interval(self.playTone, self.interval)
 
 
