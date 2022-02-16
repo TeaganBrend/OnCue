@@ -54,13 +54,13 @@ class OnCue(App):
 		self.window.add_widget(self.greeting)
 
 		# Add Frequency input
-		fc,self.freq_control = self._addControl(160,'Hz','Pink')
+		fc,self.freq_control = self._addControl(160,'Hz','Pink') 
 		self.window.add_widget(fc)
 		# Add Interval input
-		ic,self.interval_control = self._addControl(0.05,'Min','White')
+		ic,self.interval_control = self._addControl(20,'Min','White')
 		self.window.add_widget(ic)
 		# Add Volume slider
-		vc,self.volume_control = self._addControl(20,'Vol','Pink',True)
+		vc,self.volume_control = self._addControl(20,'Vol','Pink',True) # range 0 to 50
 		self.window.add_widget(vc)
 		# Add StartStop Button
 		button_border = FancyBorder(cols=1,padding=[int((x/x)*self.fontsize*0.05) for x in range(1,5)],bgcolor=self.scheme['Blue_3'])
@@ -127,15 +127,17 @@ class OnCue(App):
 		timesteps = np.linspace(0, noteduration, noteduration * sample_rate, False)
 
 		# generate sine wave notes
-		note = np.sin(freq * timesteps * 2 * np.pi)
-
-		audio = np.zeros((44100, 2))
-		n = len(timesteps)
-	
-		audio[0 : n , 0] += note
-		audio[0 : n , 1] += 0.125 * note
-		# normalize to 16-bit range
+		audio = np.sin(freq * timesteps * 2 * np.pi)
+		
+		# normalize to 16-bit range. This makes our output amplitude the maximum of the format.
 		audio *= 32767 / np.max(np.abs(audio))
+		
+		# convert volume input to a gain in a dB ish unit
+		# linear changes in percieved volume are logarithmic changes in amplitude so we use np.power
+		# all gains are negative because of the normalize step
+		gain = np.power(10, ( self.volume_control.value - 50) / 50)	
+		audio = audio * gain
+		
 		# convert to 16-bit data
 		audio = audio.astype(np.int16)
 
