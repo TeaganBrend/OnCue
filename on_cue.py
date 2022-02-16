@@ -65,6 +65,7 @@ class OnCue(App):
         self.button.bind(on_press=self.StartStop)
         button_border.add_widget(self.button)
         self.window.add_widget(button_border)
+        self.loop_counter = 0
 
         # Define our variables
         self.running = False
@@ -118,38 +119,38 @@ class OnCue(App):
         fadein = 0.05
         middle=0.1
         fadeout=0.35
-        # lets update our runtime variables
-        self.vol = self.volume_control.value
-        self.freq = float(self.freq_control.text)
-        dps = self.vol/fadein
-        self.sinewave = SineWave(pitch = 0,pitch_per_second = 10,decibels_per_second=dps,decibels=0)
-        self.sinewave.sinewave_generator.goal_frequency = self.freq
-        self.sinewave.sinewave_generator.frequency = self.freq
-        self.sinewave.play()
-        self.sinewave.set_volume(self.vol)
         # here starts the dumb scheduling nonesense because time.sleep() breaks things
-        Clock.schedule_once(self.middlePause,fadein+middle)
-        
+        if self.loop_counter == 0:
+            # lets update our runtime variables
+            self.vol = self.volume_control.value
+            self.freq = float(self.freq_control.text)
+            dps = self.vol/fadein
+            self.sinewave = SineWave(pitch = 0,pitch_per_second = 10,decibels_per_second=dps,decibels=0)
+            self.sinewave.sinewave_generator.goal_frequency = self.freq
+            self.sinewave.sinewave_generator.frequency = self.freq
+            self.sinewave.play()
+            self.sinewave.set_volume(self.vol)
+            self.loop_counter = 1
+            Clock.schedule_once(self.playTone,fadein+middle)
+        elif self.loop_counter == 1:
+            dps = self.vol/fadeout
+            self.sinewave.sinewave_generator.decibels_per_second = dps
+            self.sinewave.set_volume(0)
+            self.loop_counter = 2
+            Clock.schedule_once(self.playTone,fadeout)
+        elif self.loop_counter == 2:
+            self.sinewave.sinewave_generator.samplerate=1
+            self.loop_counter = 3
+            Clock.schedule_once(self.playTone,1)
 
-    def middlePause(self, *args):
-        fadeout=0.35
-        dps = self.vol/fadeout
-        self.sinewave.sinewave_generator.decibels_per_second = dps
-        self.sinewave.set_volume(0)
-        Clock.schedule_once(self.fadeOut,fadeout)
-
-    def fadeOut(self, *args):
-        self.sinewave.sinewave_generator.samplerate=1
-        Clock.schedule_once(self.finishTone,1)
-    
-    def finishTone(self, *args):
-        self.sinewave.stop()
-        tmp_interval = float(self.interval_control.text)*60 #convert to seconds
-        if tmp_interval != self.interval:
-            self.clock_int.cancel()
-            self.interval = tmp_interval
-            self.clock_int = Clock.schedule_interval(self.playTone, self.interval)
-
-
+        elif self.loop_counter == 3:
+            self.sinewave.stop()
+            tmp_interval = float(self.interval_control.text)*60 #convert to seconds
+            self.loop_counter = 0
+            if tmp_interval != self.interval:
+                self.clock_int.cancel()
+                self.interval = tmp_interval
+                self.clock_int = Clock.schedule_interval(self.playTone, self.interval)
+           
 if __name__ == '__main__':
     OnCue().run()
